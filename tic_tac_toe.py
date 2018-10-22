@@ -158,7 +158,7 @@ def do_mark(field, character, x_position, y_position):
 
     def reducer(acc_field, cur_field_enumeration):
         cur_index, cur_value = cur_field_enumeration
-        should_update = cur_index == index
+        should_update = cur_index == index and cur_value == BLANK_MARK
         return acc_field + [character if should_update else cur_value]
 
     return reduce(reducer, enumerate(field), [])
