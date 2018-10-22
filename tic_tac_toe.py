@@ -49,14 +49,15 @@ GAME_OVER_SIGN_POST = '''
 '''
 
 FIELD_TEMPLATE = '''
-    1   2   3
-      |   |
-    p | p | p   1
-  ----*---*----
-    p | p | p   2
-  ----*---*----
-    p | p | p   3
-      |   |
+h o r i z o n t a l
+    1   2   3      v
+      |   |        e
+    p | p | p   1  r
+  ----*---*----    t
+    p | p | p   2  i
+  ----*---*----    c
+    p | p | p   3  a
+      |   |        l
 '''.replace('p', '{}')
 
 X_MARK = 'x'
