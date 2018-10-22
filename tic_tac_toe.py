@@ -59,15 +59,17 @@ FIELD_TEMPLATE = '''
       |   |
 '''.replace('p', '{}')
 
-INITIAL_FIELD = [
-    ' ', ' ', ' ',
-    ' ', ' ', ' ',
-    ' ', ' ', ' ',
-]
-
 X_MARK = 'x'
 
 O_MARK = 'o'
+
+BLANK_MARK = ' '
+
+INITIAL_FIELD = [
+    BLANK_MARK, BLANK_MARK, BLANK_MARK,
+    BLANK_MARK, BLANK_MARK, BLANK_MARK,
+    BLANK_MARK, BLANK_MARK, BLANK_MARK,
+]
 
 CREATE_MODE = 'create'
 
@@ -125,11 +127,11 @@ def select_game_mode(client):
 def marking_routine(client, field, player_mark):
     clear_logs()
     show(field)
-    log('And where will you put your mark?')
+    log('And where will you put your "{}" mark?'.format(player_mark))
     available_coordinates = [str(n) for n in range(1, 4)]
     selected_x = read_option('Horizontal number: ', available_coordinates)
     selected_y = read_option('Vertical number: ', available_coordinates)
-    field = mark(field, player_mark, selected_x, selected_y)
+    field = do_mark(field, player_mark, selected_x, selected_y)
     client.send(field)
     return field
 
@@ -148,8 +150,11 @@ def bootstrap_game_client(server_host='127.0.0.1',
             continue
     raise Exception('Fatal failure, could not initialize client.')
 
-def mark(field, character, x_position, y_position):
-    index = (int(x_position) - 1) + ((int(y_position) - 1) * 3)
+def field_index(x_position, y_position):
+    return (int(x_position) - 1) + ((int(y_position) - 1) * 3)
+
+def do_mark(field, character, x_position, y_position):
+    index = field_index(x_position, y_position)
 
     def reducer(acc_field, cur_field_enumeration):
         cur_index, cur_value = cur_field_enumeration
@@ -162,6 +167,7 @@ def show(field):
     log(FIELD_TEMPLATE.format(*(field or INITIAL_FIELD)))
 
 def game_over(player_result):
+    log()
     log(GAME_OVER_SIGN_POST)
     log('Hope you had enjoyed.')
     log('Result: {}'.format(player_result))
@@ -183,6 +189,26 @@ def consume_field_from_messages(client):
 
     return None
 
+def find_winner(field):
+    conditions = {
+        (field_index(1, 1), field_index(2, 2), field_index(3, 3)),
+        (field_index(1, 3), field_index(2, 2), field_index(3, 1)),
+        (field_index(1, 1), field_index(2, 1), field_index(3, 1)),
+        (field_index(1, 2), field_index(2, 2), field_index(3, 2)),
+        (field_index(1, 3), field_index(2, 3), field_index(3, 3)),
+        (field_index(1, 1), field_index(1, 2), field_index(1, 3)),
+        (field_index(2, 1), field_index(2, 2), field_index(2, 3)),
+        (field_index(2, 1), field_index(2, 2), field_index(2, 3)),
+    }
+
+    for indexes_match in conditions:
+        if all(field[i] != BLANK_MARK for i in indexes_match):
+            first, second, third = indexes_match
+            if field[first] == field[second] == field[third]:
+                return field[first]
+
+    return BLANK_MARK if not any(x == BLANK_MARK for x in field) else None
+
 def main():
     client = bootstrap_game_client()
 
@@ -201,18 +227,31 @@ def main():
         player_mark = O_MARK
         field = INITIAL_FIELD
 
-    for _ in range(5):
+    winner = None
+    while winner is None:
         while field is None:
             field = consume_field_from_messages(client)
             log_inline('.')
             time.sleep(1)
         else:
+            winner = find_winner(field)
+            if winner is not None:
+                break
+
             field = marking_routine(client, field, player_mark)
+
+            winner = find_winner(field)
+            if winner is not None:
+                break
+
             clear_logs()
             show(field)
             field = None
-    else:
-        game_over('Exceeded attemptings to end.')
+
+    clear_logs()
+    show(field)
+    draw =  winner == BLANK_MARK
+    game_over('"{}" won!'.format('nobody' if draw else winner.upper()))
 
 if __name__ == '__main__':
     main()
