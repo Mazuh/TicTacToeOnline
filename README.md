@@ -14,14 +14,17 @@ repository which has no external dependencies whatsoever.
 Just clone this repository and change directory for it. There's no need to download other
 requirements, you only need Python 2.7 installed.
 
-Open 3 terminal windows.
+Open 3 terminal tabs. (It's needed a Unix-like environment for the commands below, but
+on a pure Windows you can open the [Makefile](Makefile) and copy the scripts.)
 
 On the first one, run:
 ```
 make server
 ```
 
-And on the the second:
+Now a demo server is started on your localhost.
+
+And on the the second terminal:
 ```
 make client
 ```
